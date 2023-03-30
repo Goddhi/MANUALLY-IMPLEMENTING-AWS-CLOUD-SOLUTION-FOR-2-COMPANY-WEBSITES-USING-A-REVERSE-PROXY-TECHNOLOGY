@@ -35,8 +35,7 @@ In this project, you will build a secure infrastructure inside AWS VPC (Virtual 
 
 There are few requirements that must be met before you begin:
 
-1. 
-Properly configure your AWS account and Organization Unit [Watch How To Do This Here](https://youtu.be/9PQYCc_20-Q)
+1. Properly configure your AWS account and Organization Unit [Watch How To Do This Here](https://youtu.be/9PQYCc_20-Q)
 
 - Create an AWS Master account. (Also known as Root Account).
 - Within the Root account, create a sub-account and name it DevOps. (You will need another email address to complete this)
@@ -64,4 +63,4 @@ We would be using the architecture diagram above for this project.
 
 output: 
 
-[vpc](Images/vpc.png)
+![vpc](Images/vpc.png)
