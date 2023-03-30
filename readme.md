@@ -107,7 +107,17 @@ Associate private route table with private subnets
 
   - For the public route table, we would add a route to the internet gateway. This is to allow the public subnets to have access to the internet. To do this, click on the route table, select routes, and click on edit routes. Add a new route with the destination as '0.0.0.0/0' and the target as the internet gateway, this would bring up the internet gateway drop down. Select the internet gateway you created earlier and click save.
 
-![dit-route-for-pub-subnet](Images/public-sub-rtb.png)
+![edit-route-for-pub-subnet](Images/public-sub-rtb.png)
+
+### Creating an Elastic IP
+
+- Before we create the private route, we need to create an elastic ip address.
+
+![aws-elastic-ip](Images/aws-elp.png)
+
+
+
+
 
 
 
