@@ -2,26 +2,27 @@
 
 ## Table of Contents
 
-[Introduction](https://github.com/Goddhi/MANUALLY-IMPLEMENTING-AWS-CLOUD-SOLUTION-FOR-2-COMPANY-WEBSITES-USING-A-REVERSE-PROXY-TECHNOLOGY#introduction)
-Starting Off Your AWS Cloud Project
-SET UP A VIRTUAL PRIVATE NETWORK (VPC)
-Creating the Subnets
-Creating the Route Tables
-Creating an Elastic IP
-Creating a NAT Gateway
-Creating the Security Groups
-Assigning Certificate and creating Hosted Zone
-Creating the Elastic File System (EFS)
-Creating the Relational Database Service (RDS), Key Management Service (KMS) and Subnet Groups
-Creating our Resources
-Bastion AMI installation
-Nginx AMI installation
-Webserver AMI installation
-Creating our AMI images
-Creating our Target groups
-Creating our Load Balancers
-Creating the Autoscaling Groups
-Creating the Route53 records
+- [Introduction](https://github.com/Goddhi/MANUALLY-IMPLEMENTING-AWS-CLOUD-SOLUTION-FOR-2-COMPANY-WEBSITES-USING-A-REVERSE-PROXY-TECHNOLOGY#introduction)
+- [Starting Off Your AWS Cloud Project](https://github.com/Goddhi/MANUALLY-IMPLEMENTING-AWS-CLOUD-SOLUTION-FOR-2-COMPANY-WEBSITES-USING-A-REVERSE-PROXY-TECHNOLOGY#starting-off-your-aws-cloud-project)
+- [SET UP A VIRTUAL PRIVATE NETWORK (VPC)](https://github.com/Goddhi/MANUALLY-IMPLEMENTING-AWS-CLOUD-SOLUTION-FOR-2-COMPANY-WEBSITES-USING-A-REVERSE-PROXY-TECHNOLOGY#set-up-a-virtual-private-network-vpc)
+- [Creating the Subnets](https://github.com/Goddhi/MANUALLY-IMPLEMENTING-AWS-CLOUD-SOLUTION-FOR-2-COMPANY-WEBSITES-USING-A-REVERSE-PROXY-TECHNOLOGY#creating-the-subnets)
+- [Creating the Route Tables](https://github.com/Goddhi/MANUALLY-IMPLEMENTING-AWS-CLOUD-SOLUTION-FOR-2-COMPANY-WEBSITES-USING-A-REVERSE-PROXY-TECHNOLOGY#creating-the-route-tables)
+- [Creating an Elastic IP](https://github.com/Goddhi/MANUALLY-IMPLEMENTING-AWS-CLOUD-SOLUTION-FOR-2-COMPANY-WEBSITES-USING-A-REVERSE-PROXY-TECHNOLOGY#creating-an-elastic-ip)
+- [Creating a NAT Gateway](https://github.com/Goddhi/MANUALLY-IMPLEMENTING-AWS-CLOUD-SOLUTION-FOR-2-COMPANY-WEBSITES-USING-A-REVERSE-PROXY-TECHNOLOGY#creating-a-nat-gateway)
+- [Creating the Security Groups](https://github.com/Goddhi/MANUALLY-IMPLEMENTING-AWS-CLOUD-SOLUTION-FOR-2-COMPANY-WEBSITES-USING-A-REVERSE-PROXY-TECHNOLOGY#creating-the-security-groups)
+- [Assigning Certificate and creating Hosted Zone](https://github.com/Goddhi/MANUALLY-IMPLEMENTING-AWS-CLOUD-SOLUTION-FOR-2-COMPANY-WEBSITES-USING-A-REVERSE-PROXY-TECHNOLOGY#assigning-certificate-and-creating-hosted-zone)
+- [Creating the Elastic File System (EFS)](https://github.com/Goddhi/MANUALLY-IMPLEMENTING-AWS-CLOUD-SOLUTION-FOR-2-COMPANY-WEBSITES-USING-A-REVERSE-PROXY-TECHNOLOGY#creating-the-elastic-file-system-efs)
+- [Creating the Relational Database Service (RDS), Key Management Service (KMS) and Subnet Groups](https://github.com/Goddhi/MANUALLY-IMPLEMENTING-AWS-CLOUD-SOLUTION-FOR-2-COMPANY-WEBSITES-USING-A-REVERSE-PROXY-TECHNOLOGY#creating-the-relational-database-service-rds-key-management-service-kms-and-subnet-groups-optional)
+- [Creating our Resources](https://github.com/Goddhi/MANUALLY-IMPLEMENTING-AWS-CLOUD-SOLUTION-FOR-2-COMPANY-WEBSITES-USING-A-REVERSE-PROXY-TECHNOLOGY#creating-our-resources)
+- [Bastion AMI installation](https://github.com/Goddhi/MANUALLY-IMPLEMENTING-AWS-CLOUD-SOLUTION-FOR-2-COMPANY-WEBSITES-USING-A-REVERSE-PROXY-TECHNOLOGY#bastion-ami-installation)
+- [Nginx AMI installation](https://github.com/Goddhi/MANUALLY-IMPLEMENTING-AWS-CLOUD-SOLUTION-FOR-2-COMPANY-WEBSITES-USING-A-REVERSE-PROXY-TECHNOLOGY#nginx-ami-installation)
+- [Webserver AMI installation](https://github.com/Goddhi/MANUALLY-IMPLEMENTING-AWS-CLOUD-SOLUTION-FOR-2-COMPANY-WEBSITES-USING-A-REVERSE-PROXY-TECHNOLOGY#webserver-ami-installation)
+- [Creating our AMI images](https://github.com/Goddhi/MANUALLY-IMPLEMENTING-AWS-CLOUD-SOLUTION-FOR-2-COMPANY-WEBSITES-USING-A-REVERSE-PROXY-TECHNOLOGY#creating-our-ami-images)
+- [Creating our Target groups](https://github.com/Goddhi/MANUALLY-IMPLEMENTING-AWS-CLOUD-SOLUTION-FOR-2-COMPANY-WEBSITES-USING-A-REVERSE-PROXY-TECHNOLOGY#creating-our-target-groups)
+- [Creating our Load Balancers](https://github.com/Goddhi/MANUALLY-IMPLEMENTING-AWS-CLOUD-SOLUTION-FOR-2-COMPANY-WEBSITES-USING-A-REVERSE-PROXY-TECHNOLOGY#creating-our-load-balancers)
+- [Creating our Launch Templates](https://github.com/Goddhi/MANUALLY-IMPLEMENTING-AWS-CLOUD-SOLUTION-FOR-2-COMPANY-WEBSITES-USING-A-REVERSE-PROXY-TECHNOLOGY#creating-our-launch-templates)
+- [Creating the Autoscaling Groups](https://github.com/Goddhi/MANUALLY-IMPLEMENTING-AWS-CLOUD-SOLUTION-FOR-2-COMPANY-WEBSITES-USING-A-REVERSE-PROXY-TECHNOLOGY#creating-the-autoscaling-groups)
+- [Creating the Route53 records](https://github.com/Goddhi/MANUALLY-IMPLEMENTING-AWS-CLOUD-SOLUTION-FOR-2-COMPANY-WEBSITES-USING-A-REVERSE-PROXY-TECHNOLOGY#creating-the-route53-records)
 
 ## Introduction
 
