@@ -264,8 +264,100 @@ Note: The purpose of creating two access points is to prevent the case of files 
 
 ![img-instances](Images/img-instances.png)
   
+- Now we ssh into our bastion host to install the necessary packages using mobaxterm. 
 
+### Bastion AMI installation
 
+- SSH into the bastion server
+  - switch to root user
+  - install the necessary packages
+
+```
+yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+
+yum install -y dnf-utils http://rpms.remirepo.net/enterprise/remi-release-8.rpm 
+
+yum install wget vim python3 telnet htop git nano mysql net-tools chrony -y 
+
+systemctl start chronyd 
+
+systemctl enable chronyd
+
+```
+
+### Nginx AMI installation
+
+- SSH into the nginx server
+  - switch to root user
+
+```
+sudo su -
+```
+   - install the necessary packages
+```
+yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+
+yum install -y dnf-utils http://rpms.remirepo.net/enterprise/remi-release-8.rpm
+
+yum install wget vim python3 telnet nano htop git mysql net-tools chrony -y
+
+systemctl start chronyd
+
+systemctl enable chronyd
+```
+- configure selinux policies for the webservers and nginx servers
+
+```
+setsebool -P httpd_can_network_connect=1
+
+setsebool -P httpd_can_network_connect_db=1
+
+setsebool -P httpd_execmem=1
+
+setsebool -P httpd_use_nfs 1
+```
+- We will install amazon EFS utils for mounting the target on the Elastic file system
+
+```
+git clone https://github.com/aws/efs-utils
+
+cd efs-utils
+
+yum install -y make
+
+yum install -y rpm-build
+
+make rpm 
+
+yum install -y  ./build/amazon-efs-utils*rpm
+```
+- Seting up self-signed certificate for the nginx instance
+
+```
+sudo mkdir /etc/ssl/private
+
+sudo chmod 700 /etc/ssl/private
+
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/ACS.key -out /etc/ssl/certs/ACS.crt
+
+sudo openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048
+```
+
+```
+  - The openssl command will prompt you to enter the following information:
+      - Country Name (2 letter code) [AU]: NG
+      - State or Province Name (full name) [Some-State]: Lagos
+      - Locality Name (eg, city) []: Ikeja
+      - Organization Name (eg, company) [Internet Widgits Pty Ltd]: ACS
+      - Organizational Unit Name (eg, section) []: IT
+      - Common Name (e.g. server FQDN or YOUR name) []: <nginx-server private dns>
+      - Email Address []:
+```
+- To check if our certificate has been generated run the following command
+```
+sudo ls /etc/ssl/certs/
+```
+As we would be looking for ACS.crt.
 
 
 
