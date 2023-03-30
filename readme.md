@@ -115,6 +115,185 @@ Associate private route table with private subnets
 
 ![aws-elastic-ip](Images/aws-elp.png)
 
+### Creating a NAT Gateway
+
+- Then we need to create NAT gateways.
+![nat-gat](Images/nat-gat.png)
+
+Now let's navigate back to our route tables and select the private route table. Click on routes and edit routes. Add a new route with the destination as '0.0.0.0/0' and the target as the NAT gateway. This would bring up the NAT gateway dropdown. Select the NAT gateway you created earlier and click save.
+![nat-pri-subnet](Images/nat-pri-sub.png)
+
+### Creating the Security Groups
+
+- Now we need to create security groups for all the application resources. It is important to allocate the security groups we create to the vpc created earlier.
+  - Create a security group for our External Application Load Balancer (ALB). This would be a public security group. This is to allow the ALB to receive traffic from the internet. We would allow traffic on port 80 and 443. This is to allow traffic from the internet to the ALB.
+  
+![scg-https and http ](Images/scg-http.png)
+
+Create a security group for our Bastion host. This is to allow us to access the Bastion host from the internet. We would allow traffic on port 22. And we would restrict the source to our IP address.
+
+![scg-bastion](Images/scg-bastion.png)
+
+- Create a security group for the Nginx reverse proxy server. It is important to note that from the architecture diagram, the Nginx reverse proxy server interacts with the application load balancer (ALB) and not the bastion. So the source of the traffic would be the ALB security group. We would allow traffic on port 80 and 443. And we would restrict the source to the ALB security group. For emergencies, we need to allow ssh traffic from the bastion server. So we would allow traffic on port 22 and restrict the source to the bastion security group.
+
+![securty group for rerse proxy](Images/scg-reerse-proxy.png)
+
+- We also need to create a security group for the internal application load balancer (ALB). This is to allow the ALB to receive traffic from the Nginx reverse proxy server. We would allow traffic on port 80 and 443. And we would restrict the source to the Nginx reverse proxy server security group.
+
+![security group for ingternal ](Images/aws-vpc-security-group-internal-alb.png)
+
+- We also need to create a security group for our web servers and the traffic should come only from our internal application load balancer (ALB). We would allow traffic on port 80 and 443. And we would restrict the source to the internal ALB security group. And also ssh from the bastion server only.
+
+![scg for webserer](Images/aws-vpc-security-group-webserver.png)
+
+- We also need to create a security group for the Data Layer. This is to allow the web servers to connect to the database. We would allow traffic on port 3306. And we would restrict the source to the web server security group.
+
+![scg for datalayer](Images/aws-vpc-security-group-database.png)
+
+### Assigning Certificate and creating Hosted Zone
+
+- We need to create our certificates, before this you need to get a domain and transfer it to AWS Route 53. [Here's a guide on how to transfer your domain](https://www.youtube.com/watch?v=3lWo3ovMhTA)
+
+- Now create a hosted zone in route 53 bearing the name of your domain. Then create a record set for the domain. This is to allow the domain to resolve to the ALB.
+
+- Navigate to the certificate manager and create a certificate for your domain. This is to allow the ALB to use the certificate for the domain.
+
+  - In creating the certificate, you would be asked to choose the domain name. Select the domain name you created earlier, ensure you use a wildcard domain name. This is to allow the certificate to be used for all subdomains. Then click on next.
+Then click on the certificate, in the domain section you would be asked to create records in route 53. Click on create records in route 53. This is to allow the certificate to be validated.
+
+### Creating the Elastic File System (EFS)
+
+- Now we proceed to create the Amazon Elastic File system (EFS). This is to allow the web servers to share files. Navigate to the EFS dashboard and click on create file system. Select the vpc that was earlier created and click on customize. Then click next. Here you would be asked to create mount targets. Select the subnets you want to create the mount targets in (private subnets 1&2). Remember to change the security group to datalayer security group. This is to allow the web servers to connect to the EFS. Then click next. Then click on create file system.
+
+
+![img of efs](Images/aws-vpc-efs.png)
+
+
+![img  of efs network](Images/aws-vpc-efs-network.png)
+
+Note: According to our architecture diagram, our web servers are in private subnets 1 & 2. As they would be the ones that need to mount to the EFS.
+
+- In our filesystem, we need to create access points. One for our tooling and the other for wordpress server. Navigate to the EFS dashboard and select the file system you created earlier. Then click on access points. Click on create an access point.
+
+  - specify the name of the access point.
+  - specify the path of the root directory. This is to allow the access point to be used for a specific directory.
+
+  - select the POSIX user:
+    - user ID : 0
+    - group ID : 0
+
+  - select the root directory creation permissions:
+    - owner ID : 0
+    - group ID : 0
+    - permissions: 0755
+
+Repeat the above steps to create another access point for the tooling server. 
+
+![efs-access point](Images/efs-access-point.png)
+
+Note: The purpose of creating two access points is to prevent the case of files overwriting each other when the WordPress server and the tooling server are both writing to the same access point.
+
+### Creating the Relational Database Service (RDS), Key Management Service (KMS) and Subnet Groups (Optional)
+
+  - Let's create the KMS key. Navigate to the KMS dashboard and click on create key.
+
+     - select the key type as symmetric.
+     - select the key usage as encrypt and decrypt.
+     - click on next.
+     -  select a name for the key.
+     -  select the key administrator.(you can select your own account)
+     -  click on next.
+     - select the key usage permission. (you can select your own account)
+     -  click on finish.
+
+![kms-config](Images/kms-img.png)
+
+- Let's move on with creating the subnet groups. Navigate to the RDS dashboard and click on subnet groups.
+
+  -  click on create db subnet group.
+  - specify the name and description of the subnet group.
+  - select the vpc you created earlier.
+  - select the availability zones that include the subnets you want to     add. In this case, we would select us-east-1a and us-east-1b.
+  - select the subnets you want to add. According to the format for assigning IP addresses our private subnets where the RDS would be created are odd-numbered. So we would be selecting the private subnets 3 & 4.
+  - click on create.
+
+  ![rds-img](Images/rds-img.png)
+
+  - Now we navigate back to the Amazon rds dashboard and create a database
+
+  -  click on create database.
+  -  select the database engine as MySQL.
+  -  select the latest engine version.
+  -  select the free tier template. The only downside to this is that we are unable to encrypt the database. As using the production template requires a huge amount of money.
+  -  select your db instance identifier.
+  -  select the master username and password. Here we used ACSadmin and admin12345 respectively.
+  -  select the vpc you created earlier.
+  -  For the public access, we would select no. This is to prevent the database from being accessed publicly.
+  -  For the vpc security group, we would select the datalayer security group created much earlier.
+  -  In the additional configuration, we would specify the initial database name as test
+  -   Then click on create database
+
+  ![rds-img-2](Images/rds-img2.png)
+
+  ### Creating our Resources
+
+- Target group
+
+- Launch template
+
+- Load balancer
+
+- Auto scaling group
+
+- Create our launch template. We would be creating 3 instances that we would use as our template.
+
+    - Navigate to the EC2 dashboard and click on ec2 instances.
+    - Click on launch instance.
+    - Select the AMI you want to use. In this case, we would be using the RedHat linux 8 AMI.
+    - Select the instance type. In this case, we would be using the t2.micro.
+    - Configure the instance and change the number of instances to 3.
+    - Configure the security group. Here we would be creating a new security group. We would be allowing traffic all traffic.
+    - Then click on launch.
+
+![img-instances](Images/aws-vpc-ec2-launch-instances.png)
+
+- Rename the 3 instances
+    - bastion
+    - nginx
+    - webserver
+
+![img-instances](Images/img-instances.png)
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
