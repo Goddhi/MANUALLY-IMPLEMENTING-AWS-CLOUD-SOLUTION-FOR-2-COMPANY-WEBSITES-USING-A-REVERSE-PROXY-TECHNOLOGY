@@ -752,15 +752,106 @@ The tooling access point from the Elastic File System
   -  click on next
   -  click on create autoscaling group
 
+![nginx-auto](Images/nginx-auto.png)
 
+- Navigate to you ec2 dashboard and select the instances tab
 
+- select the instances
+- take the ip address of the ACS-bastion-as instance.
+- ssh into the instance using the key pair you created earlier
+- We want to login to mysql on the rds through the bastion server
+- run the following command:
 
+```
+mysql -h <rds-endpoint> -u ACSadmin -p 
+```
+- enter the password you created earlier
+- We would be creating the wordpress and tooling database on the rds instance
+- run the following commands:
 
+```
+create database wordpressdb;
+create database toolingdb;
+show databases;
+```
+- Then you can exit the rds
 
+![database-img](Images/database-img.png)
 
+- Now we move on to creating an auto scaling group for the wordpress servers
 
+  - Navigate to EC2 > Autoscaling > create autoscaling group
+  - specify your autoscaling group name: ACS-wordpress-as
+  - select your launch template: the one you created earlier (ACS-wordpress-template)
+  - click on next
+  - select your VPC: the one you created earlier (ACS-VPC)
+  - select your subnet: the private subnet you created earlier (private subnet 1 & 2)
+  - click on next
+  - Under load balancing: select attach to an existing load balancer
+    - select your load balancer: the one you created earlier (ACS-wordpress-target)
+  - Under health check: select ELB status check
+  - Under scaling policies: select Target tracking scaling
+    - specify target value: 90
+  - click on next
+  - Create a Notification
+    - specify your topic: (ACS-Notification)
+    - select all events
+  - click on next
+  - Under tags: select add tag
+    - specify your tag: Name
+    - specify your value: ACS-wordpress-as
+  - click on next
+  - click on create autoscaling group
 
+![wordpress-auto](Images/wordpress-auto.png)
 
+- We would also move on to creating an auto scaling group for the tooling servers
+
+- Navigate to EC2 > Autoscaling > create autoscaling group
+- specify your autoscaling group name: ACS-tooling-as
+- select your launch template: the one you created earlier (ACS-tooling-template)
+- click on next
+- select your VPC: the one you created earlier (ACS-VPC)
+- select your subnet: the private subnet you created earlier (private subnet 1 & 2)
+- click on next
+- Under load balancing: select attach to an existing load balancer
+  - select your load balancer: the one you created earlier (ACS-tooling-target)
+- Under health check: select ELB status check
+- Under scaling policies: select Target tracking scaling
+  - specify target value: 90
+- click on next
+- Create a Notification
+  - specify your topic: (ACS-Notification)
+  - select all events
+- click on next
+- Under tags: select add tag
+  - specify your tag: Namespecify your tag: Name
+  - specify your tag: Name
+- click on next
+- click on create autoscaling group
+
+![tooling-auto](Images/tooling-auto.png)
+
+### Creating the Route53 records
+
+It's time for us to create the route53 records for the load balancers
+
+- Navigate to Route53 > Hosted zones > create hosted zone > select your previously created hosted zone > click on add records
+
+- For tooling
+
+- specify your record name: tooling
+- check the alias box
+- Route traffic to: Alias to Application Load Balancer
+- Choose region: select the region you created your load balancer in (us-east-1)
+- select your load balancer: the application ext load balancer 
+(ACS-ext-AppLB)
+
+- The same process applies to the wordpress.
+
+- Now you can open your browser and go to
+  - tooling.yourdomain.com
+  - wordpress.yourdomain.com
 
 
 
