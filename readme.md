@@ -64,3 +64,51 @@ We would be using the architecture diagram above for this project.
 output: 
 
 ![vpc](Images/vpc.png)
+
+We need to ensure that dns hostnames are enabled for our VPC. This is to ensure that our EC2 instances can resolve each other using their private IP addresses. To do this, go to the VPC dashboard, select your VPC, and click on the Actions button. Select Edit DNS Hostnames and enable it.
+
+![pc-settings](Images/pc-settings.png)
+
+- Create an internet gateway and attach it to the created vpc.
+
+![internet-gateway](Images/igw.png)
+
+- Then attach the internet gateway to the VPC.
+
+![attach-igw](Images/attach-igw.png)
+
+### Creating the Subnets
+
+- The next thing is to create the subnets. We would use ipinfo to get the IP address ranges for the different regions. You can decide how you intend to assign the IP address ranges to the subnets. Here I would be using even-number addresses for public subnets and odd-number IP addresses for private subnets. We would use the IP address ranges for the different regions to create the subnets. We would create 6 subnets for the VPC. Two public subnets and four private subnets The subnets would be in the us-east-1 availability zone. As we would be using us-east-1a and us-east-1b.
+
+Public subnet 1 and Public subnet 2 
+![AWS public subnet 1 and 2](Images/public1-2.png)
+
+
+Private subnets 1 2 3 4
+![all-priate-subnets](Images/priate-subnets.png)
+
+### Creating the Route Tables
+
+- We then move on to creating the route tables. Here, we would be creating two route tables. A public and private route table.
+
+Public and Private rtb
+![public-priate-rtb](Images/rtb.png)
+
+- Now we associate the route tables with their corresponding subnets. Navigate to the subnet associations after selecting the route table and click on edit associations. Select the subnets you want to associate with the route table and click save.
+
+Associate public route table with public subnets
+![Associate-pub-sub-rtb](Images/associate-pub-rtb.png)
+
+Associate private route table with private subnets
+![Associate-pri-sub-rtb](Images/associate-pri-sub-rtb.png)
+
+- Now we need to edit the routes of the route tables.
+
+  - For the public route table, we would add a route to the internet gateway. This is to allow the public subnets to have access to the internet. To do this, click on the route table, select routes, and click on edit routes. Add a new route with the destination as '0.0.0.0/0' and the target as the internet gateway, this would bring up the internet gateway drop down. Select the internet gateway you created earlier and click save.
+
+![dit-route-for-pub-subnet](Images/public-sub-rtb.png)
+
+
+
+
