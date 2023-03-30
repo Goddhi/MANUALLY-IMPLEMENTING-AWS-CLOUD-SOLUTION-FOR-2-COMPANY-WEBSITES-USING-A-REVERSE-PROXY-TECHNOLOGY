@@ -359,6 +359,291 @@ sudo ls /etc/ssl/certs/
 ```
 As we would be looking for ACS.crt.
 
+### Webserver AMI installation
+
+- SSH into the webserver on mobaxterm
+  - switch to root user
+```
+sudo su -
+```
+  - install the necessary packages
+```
+yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+
+yum install -y dnf-utils http://rpms.remirepo.net/enterprise/remi-release-8.rpm
+
+yum install wget vim python3 telnet htop nano git mysql net-tools chrony -y
+
+systemctl start chronyd
+
+systemctl enable chronyd
+```
+- configure selinux policies for the webservers and nginx servers
+
+```
+setsebool -P httpd_can_network_connect=1
+
+setsebool -P httpd_can_network_connect_db=1
+
+setsebool -P httpd_execmem=1
+
+setsebool -P httpd_use_nfs 1
+```
+- We will install amazon EFS utils for mounting the target on the Elastic file system
+
+```
+git clone https://github.com/aws/efs-utils
+
+cd efs-utils
+
+yum install -y make
+
+yum install -y rpm-build
+
+make rpm 
+
+yum install -y  ./build/amazon-efs-utils*rpm
+```
+- Setting up self-signed certificate for the apache webserver instance
+
+```
+yum install -y mod_ssl
+
+openssl req -newkey rsa:2048 -nodes -keyout /etc/pki/tls/private/ACS.key -x509 -days 365 -out /etc/pki/tls/certs/ACS.crt
+```
+- The openssl command will prompt you to enter the following information:
+```
+Country Name (2 letter code) [AU]: NG
+State or Province Name (full name) [Some-State]: Lagos
+Locality Name (eg, city) []: Ikeja
+Organization Name (eg, company) [Internet Widgits Pty Ltd]: ACS
+Organizational Unit Name (eg, section) []: IT
+Common Name (e.g. server FQDN or YOUR name) []:
+Email Address []:
+```
+- Let's edit the ssl.conf file and change the following lines
+
+  - The location of the certificate and key files
+```
+nano /etc/httpd/conf.d/ssl.conf
+```
+### Creating our AMI images
+
+- select the webserver instance and click on actions > image > create image
+
+  - give the image a name and description
+  - click on create image 
+
+![image-ami](Images/webserer.png)
+
+- Repeat the same process for bastion and nginx instances.
+
+### Creating our Target groups
+- Create target group for nginx
+
+  - Click on load balancing > target groups > create target group
+  - Select the target type: instance.
+  - specify your target group name: ACS-nginx-target.
+  - select the protocol: HTTPS.
+  - select the port: 443.
+  - select the vpc: the one you created earlier (ACS-VPC).
+  - specify the health check protocol: HTTPS.
+  - specify the check path: /healthstatus
+  - specify the tag
+  - click on next
+  - click on create target group
+
+![img-target](Images/img-target-grp.png)
+
+- Repeat the process for wordpress and tooling target groups
+
+We should have the following target groups:
+
+![all-target-grp](Images/all-target-grp.png)
+
+### Creating our Load balancers
+- We would move on to creating the external load balancer that communicates with Nginx for us. Navigate to Load balancers > click create load balancer
+
+  - select the load balancer type: Application load balancer.
+  - Click create.
+  - Specify the name: ACS-ext-ALB.
+  - select the scheme: internet-facing.
+  - select the ip address type: ipv4.
+  - select the vpc: the one you created earlier (ACS-VPC).
+  - select the subnets: the public subnets you created earlier.
+  - select the security group: the one you created earlier (ACS-ext-ALB).
+  - routing:
+    - protocol: HTTPS
+    - port: 443
+    - default action: forward to acs-nginx-target
+  - ssl certificate:
+    - select from ACM: the one you created earlier from ACM
+  - click on create load balancer
+
+  ![ext-alb](Images/ext-alb.png)
+
+- The next step is to create the internal load balancer
+
+   -  Navigate to Load balancers > click create load balancer
+   -  select the load balancer type: Application load balancer.
+   - Click create.
+   - Specify the name: ACS-int-ALB.
+   - select the scheme: internal.
+   - select the ip address type: ipv4.
+   - select the vpc: the one you created earlier (ACS-VPC).
+   - select the subnets: the private subnets you created earlier (private subnet 1&2 as they are the ones connected to the internal load balancer according to the architecture diagram).
+   - select the security group: the one you created earlier (ACS-int-ALB).
+   - routing:
+      - protocol: HTTPS
+      - port: 443
+      - default action: forward to acs-wordpress-target
+    ssl certificate:
+      - select from ACM: the one you created earlier from ACM
+   - click on create load balancer
+
+   ![int-alb](Images/int-alb.png)
+
+   - We also need to ensure that the internal load balancer can communicate with the tooling target group. To do this:
+
+    - select the internal load balancer and click on listeners
+    - click on rules under the listener rules
+    - click on create rule to tell the load balancer to check for the host header with the name tooling and forward the request to the tooling target group
+    - click on save
+
+![int-target-tooling](Images/int-target-tooling.png)
+
+### Creating our Launch Templates
+
+- We would now move on to creating our launch templates. Launch templates are used to create instances with the same configuration. This is very useful when you want to create multiple instances with the same configuration.
+
+- We would be creating the launch templates for the bastion
+
+- Navigate to EC2 > launch templates > create launch template
+- specify your launch template name
+- select the AMI: the one you created earlier: instance
+- select the instance type: t2.micro
+- select your key pair: the one you created earlier
+- select your subnet: the public subnet you created earlier(public subnet 2)
+- under advanced network configurations:
+  - select your security group: the one you created earlier (ACS-bastion)
+  - enable auto assign public ip
+- under advanced details:
+  - In the user data field, paste the following script:
+
+```
+#!/bin/bash 
+yum install -y mysql 
+yum install -y git tmux 
+yum install -y ansible
+```
+  - click on create launch template
+
+![bastion temp](Images/bastion-template.png)
+
+- Then we would be creating the launch template for nginx
+
+- Navigate to EC2 > launch templates > create launch template
+- specify your launch template name
+- select the AMI: the one you created earlier: instance
+- select the instance type: t2.micro
+- select your key pair: the one you created earlier
+- select your subnet: the public subnet you created earlier(public subnet 1)
+- under advanced network configurations:
+  - select your security group: the one you created earlier (ACS-nginx-reverse-proxy)
+  - enable auto assign public ip
+- under advanced details:
+  - In the user data field, paste the following script:
+```
+#!/bin/bash
+yum install -y nginx
+systemctl start nginx
+systemctl enable nginx
+git clone https://github.com/Goddhi/ACS-project-config
+mv /ACS-project-config/reverse.conf /etc/nginx/
+mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf-distro
+cd /etc/nginx/
+touch nginx.conf
+sed -n 'w nginx.conf' reverse.conf
+systemctl restart nginx
+rm -rf reverse.conf
+rm -rf /ACS-project-config
+```
+   - click on create launch template
+
+![nginx template](Images/aws-vpc-ec2-nginx-launch-template.png)
+
+Note: Remember to replace the proxy_pass url with the internal load balancer url in the reverse.conf file that's present in the github repository.
+
+![img-int-alb](Images/nginx-int-alb.png)
+
+- Then we would be creating the launch template for wordpress
+
+  - Navigate to EC2 > launch templates > create launch template
+  - specify your launch template name
+  - select the AMI: the one you created earlier: instance
+  - select the instance type: t2.micro
+  - select your key pair: the one you created earlier
+  - select your subnet: the private subnet you created earlier(private subnet 1)
+  - under advanced network configurations:
+  - select your security group: the one you created earlier (ACS-webserver)
+disable auto assign public ip
+  - under advanced details:
+  - In the user data field, paste the following script:
+
+```
+#!/bin/bash
+mkdir /var/www/
+sudo mount -t efs -o tls,accesspoint=fsap-03782096eef2189e5 fs-064a0aac15a1f90dd:/ /var/www/
+yum install -y httpd 
+systemctl start httpd
+systemctl enable httpd
+yum module reset php -y
+yum module enable php:remi-7.4 -y
+yum install -y php php-common php-mbstring php-opcache php-intl php-xml php-gd php-curl php-mysqlnd php-fpm php-json
+systemctl start php-fpm
+systemctl enable php-fpm
+wget http://wordpress.org/latest.tar.gz
+tar xzvf latest.tar.gz
+rm -rf latest.tar.gz
+cp wordpress/wp-config-sample.php wordpress/wp-config.php
+mkdir /var/www/html/
+cp -R /wordpress/* /var/www/html/
+cd /var/www/html/
+touch healthstatus
+sed -i "s/localhost/acs-database.crdwcrqpgnyb.us-east-1.rds.amazonaws.com/g" wp-config.php 
+sed -i "s/username_here/ACSadmin/g" wp-config.php 
+sed -i "s/password_here/admin12345/g" wp-config.php 
+sed -i "s/database_name_here/wordpressdb/g" wp-config.php 
+chcon -t httpd_sys_rw_content_t /var/www/html/ -R
+systemctl restart httpd
+```
+Note: For the userdata config we need the following information
+
+- The Wordpress access point from the Elastic File System
+
+- Navigate to EFS > click on access points
+- Select the wordpress access point
+- click on attach
+- copy the access point mount comand provided
+
+![access-point-efs](Images/aws-vpc-ec2-wordpress-access-point.png)
+
+- The database endpoint from the RDS instance
+
+- Navigate to RDS > click on the database instance (acs-database)
+- copy the endpoint provided
+
+![rds-point](Images/aws-vpc-ec2-wordpress-rds-endpoint.png)
+
+- click on create launch template
+
+
+
+
+
+
+
+
 
 
 
