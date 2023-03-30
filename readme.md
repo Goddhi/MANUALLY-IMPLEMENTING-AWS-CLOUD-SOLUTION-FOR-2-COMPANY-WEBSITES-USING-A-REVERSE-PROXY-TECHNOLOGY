@@ -576,6 +576,8 @@ Note: Remember to replace the proxy_pass url with the internal load balancer url
 
 ![img-int-alb](Images/nginx-int-alb.png)
 
+
+
 - Then we would be creating the launch template for wordpress
 
   - Navigate to EC2 > launch templates > create launch template
@@ -638,6 +640,117 @@ Note: For the userdata config we need the following information
 - click on create launch template
 
 
+![wordpress-temp](Images/aws-vpc-ec2-wordpress-launch-template.png)
+
+- We would then move on to creating the launch templates for the tooling instances
+
+- Navigate to EC2 > launch templates > create launch template
+- specify your launch template name
+- select the AMI: the one you created earlier: instance
+- select the instance type: t2.micro
+- select your key pair: the one you created earlier
+select your subnet: the private subnet you created earlier(private subnet 2)
+- under advanced network configurations:
+  - select your security group: the one you created earlier (ACS-tooling)
+  - disable auto assign public ip
+under advanced details:
+- In the user data field, paste the following script:
+
+```
+#!/bin/bash
+mkdir /var/www/
+sudo mount -t efs -o tls,accesspoint=fsap-07f76f49862020352 fs-064a0aac15a1f90dd:/ /var/www/
+yum install -y httpd 
+systemctl start httpd
+systemctl enable httpd
+yum module reset php -y
+yum module enable php:remi-7.4 -y
+yum install -y php php-common php-mbstring php-opcache php-intl php-xml php-gd php-curl php-mysqlnd php-fpm php-json
+systemctl start php-fpm
+systemctl enable php-fpm
+git clone https://github.com/manny-uncharted/tooling.git
+mkdir /var/www/html
+cp -R /tooling-1/html/*  /var/www/html/
+cd /tooling-1
+mysql -h acs-database.crdwcrqpgnyb.us-east-1.rds.amazonaws.com -u ACSadmin -p toolingdb < tooling-db.sql
+cd /var/www/html/
+touch healthstatus
+sed -i "s/$db = mysqli_connect('mysql.tooling.svc.cluster.local', 'admin', 'admin', 'tooling');/$db = mysqli_connect('acs-database.crdwcrqpgnyb.us-east-1.rds.amazonaws.com', 'ACSadmin', 'admin12345', 'toolingdb');/g" functions.php
+chcon -t httpd_sys_rw_content_t /var/www/html/ -R
+systemctl restart httpd
+```
+Note: For the userdata config we need the following information
+
+  - The tooling access point from the Elastic File System
+
+The tooling access point from the Elastic File System
+
+- Navigate to EFS > click on access points
+- Select the tooling access point
+- click on attach
+- copy the access point mount command provided
+
+- The database endpoint from the RDS instance
+
+- Navigate to RDS > click on the database instance (acs-database)
+- copy the endpoint provided
+
+![rds-img](Images/aws-vpc-ec2-wordpress-rds-endpoint.png)
+
+- click on create launch template
+
+![temp-tooling](Images/aws-vpc-ec2-nginx-launch-template.png)
+
+### Creating the Autoscaling Groups
+
+- Now we would move on to creating Autoscaling group for the bastion
+  - Navigate to EC2 > Autoscaling > create autoscaling group
+  - specify your autoscaling group name: ACS-bastion-as
+  - select your launch template: the one you created earlier (ACS-bastion-template)
+  - click on next
+  - select your VPC: the one you created earlier (ACS-VPC)
+  - select your subnet: the public subnet you created earlier (public subnet 1 & 2)
+  - click on next
+  - Under load balancing: select no load balancer (as the bastion servers are not under load balancers according to the architecture)
+  - Under health check: select ELB status check
+  - Under scaling policies: select Target tracking scaling
+     - specify target value: 90
+  - click on next
+  - Create a Notification
+    - specify your topic: (ACS-Notification)
+    - select all events
+  - click on next
+  - Under tags: select add tag
+    - specify your tag: Name
+    - specify your value: ACS-bastion-as
+  - click on next
+  - click on create autoscaling group
+
+![bastion-auto](Images/bastion-auto.png)
+
+- Now we would move on to creating Autoscaling group for the nginx servers
+  - Navigate to EC2 > Autoscaling > create autoscaling group
+  - specify your autoscaling group name: ACS-nginx-as
+  - select your launch template: the one you created earlier (ACS-nginx-template)
+  - click on next
+  - select your VPC: the one you created earlier (ACS-VPC)
+  - select your subnet: the public subnet you created earlier (public subnet 1 & 2)
+  -  click on next
+  -  Under load balancing: select attach to an existing load balancer
+  -  select your load balancer: the one you created earlier (ACS-nginx-target)
+  -  Under health check: select ELB status check
+  -  Under scaling policies: select Target tracking scaling
+    -  specify target value: 90
+    -  click on next
+  - Create a Notification
+     - specify your topic: (ACS-Notification)
+     - select all events
+  - click on next
+  -  Under tags: select add tag
+     - specify your tag: Name
+     - specify your value: ACS-nginx-as
+  -  click on next
+  -  click on create autoscaling group
 
 
 
